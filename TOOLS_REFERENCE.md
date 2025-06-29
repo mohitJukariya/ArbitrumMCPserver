@@ -40,7 +40,7 @@ This document provides a comprehensive list of all 21 available tools in the Arb
     "wei": "1000000000000000000",
     "eth": "1.000000",
     "ethFullPrecision": "1.0",
-    "formatted": "1.000000 ETH"
+    "formatted": "1 ETH"
   },
   "network": "Arbitrum",
   "status": "1",
@@ -361,7 +361,7 @@ This document provides a comprehensive list of all 21 available tools in the Arb
         "wei": "1000000000000000000",
         "eth": "1.000000",
         "ethFullPrecision": "1.0",
-        "formatted": "1.000000 ETH"
+        "formatted": "1 ETH"
       },
       "network": "Arbitrum"
     }

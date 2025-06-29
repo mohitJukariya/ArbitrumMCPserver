@@ -61,7 +61,7 @@ export class ArbitrumService {
                                 wei: balanceWei,
                                 eth: balanceInEth.toFixed(6),
                                 ethFullPrecision: balanceInEth.toString(),
-                                formatted: `${balanceInEth.toFixed(6)} ETH`,
+                                formatted: `${balanceInEth.toFixed(18).replace(/\.?0+$/, '')} ETH`,
                             },
                             network: 'Arbitrum',
                             status: response.data.status,
@@ -448,16 +448,19 @@ export class ArbitrumService {
                 `${this.baseUrl}?module=account&action=balancemulti&address=${addressList}&tag=latest&apikey=${this.apiKey}`
             );
 
-            const formattedBalances = response.data.result.map((item: any) => ({
-                address: item.account,
-                balance: {
-                    wei: item.balance,
-                    eth: (parseFloat(item.balance) / Math.pow(10, 18)).toFixed(6),
-                    ethFullPrecision: (parseFloat(item.balance) / Math.pow(10, 18)).toString(),
-                    formatted: `${(parseFloat(item.balance) / Math.pow(10, 18)).toFixed(6)} ETH`,
-                },
-                network: 'Arbitrum',
-            }));
+            const formattedBalances = response.data.result.map((item: any) => {
+                const balanceInEth = parseFloat(item.balance) / Math.pow(10, 18);
+                return {
+                    address: item.account,
+                    balance: {
+                        wei: item.balance,
+                        eth: balanceInEth.toFixed(6),
+                        ethFullPrecision: balanceInEth.toString(),
+                        formatted: `${balanceInEth.toFixed(18).replace(/\.?0+$/, '')} ETH`,
+                    },
+                    network: 'Arbitrum',
+                };
+            });
 
             return {
                 content: [
@@ -630,7 +633,7 @@ export class ArbitrumService {
                         wei: tx.value,
                         eth: valueInEth.toFixed(6),
                         ethFullPrecision: valueInEth.toString(),
-                        formatted: `${valueInEth.toFixed(6)} ETH`,
+                        formatted: `${valueInEth.toFixed(18).replace(/\.?0+$/, '')} ETH`,
                     },
                     success: tx.isError === '0',
                 };
