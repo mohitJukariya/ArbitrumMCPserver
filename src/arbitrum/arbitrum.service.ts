@@ -34,7 +34,8 @@ export class ArbitrumService {
                 `${this.baseUrl}?module=account&action=balance&address=${address}&tag=latest&apikey=${this.apiKey}`
             );
 
-            const balanceInEth = parseFloat(response.data.result) / Math.pow(10, 18);
+            const balanceWei = response.data.result;
+            const balanceInEth = parseFloat(balanceWei) / Math.pow(10, 18);
 
             return {
                 content: [
@@ -42,8 +43,13 @@ export class ArbitrumService {
                         type: 'text',
                         text: JSON.stringify({
                             address,
-                            balance: response.data.result,
-                            balanceInEth: balanceInEth.toFixed(6),
+                            balance: {
+                                wei: balanceWei,
+                                eth: balanceInEth.toFixed(6),
+                                ethFullPrecision: balanceInEth.toString(),
+                                formatted: `${balanceInEth.toFixed(6)} ETH`,
+                            },
+                            network: 'Arbitrum',
                             status: response.data.status,
                             message: response.data.message,
                         }, null, 2),
@@ -232,15 +238,86 @@ export class ArbitrumService {
         address,
     }: GetTokenBalanceParams): Promise<McpToolResult> {
         try {
-            const response = await axios.get(
+            // First get the token balance
+            const balanceResponse = await axios.get(
                 `${this.baseUrl}?module=account&action=tokenbalance&contractaddress=${contractAddress}&address=${address}&tag=latest&apikey=${this.apiKey}`
             );
+
+            // Get token decimals
+            const decimalsResponse = await axios.get(
+                `${this.baseUrl}?module=proxy&action=eth_call&to=${contractAddress}&data=0x313ce567&tag=latest&apikey=${this.apiKey}`
+            );
+
+            // Get token name
+            const nameResponse = await axios.get(
+                `${this.baseUrl}?module=proxy&action=eth_call&to=${contractAddress}&data=0x06fdde03&tag=latest&apikey=${this.apiKey}`
+            );
+
+            // Get token symbol
+            const symbolResponse = await axios.get(
+                `${this.baseUrl}?module=proxy&action=eth_call&to=${contractAddress}&data=0x95d89b41&tag=latest&apikey=${this.apiKey}`
+            );
+
+            const rawBalance = balanceResponse.data.result;
+            let decimals = 18; // Default to 18 if we can't fetch
+            let tokenName = 'Unknown Token';
+            let tokenSymbol = 'UNKNOWN';
+
+            // Parse decimals from hex response
+            if (decimalsResponse.data.result && decimalsResponse.data.result !== '0x') {
+                decimals = parseInt(decimalsResponse.data.result, 16);
+            }
+
+            // Parse token name from hex response
+            if (nameResponse.data.result && nameResponse.data.result !== '0x') {
+                try {
+                    const nameHex = nameResponse.data.result.slice(2);
+                    const nameBuffer = Buffer.from(nameHex, 'hex');
+                    // Skip the first 64 characters (32 bytes) which contain length info
+                    const nameStart = nameBuffer.readUInt32BE(28); // Length is at offset 28-31
+                    const nameData = nameBuffer.slice(32, 32 + nameStart);
+                    tokenName = nameData.toString('utf8').replace(/\0/g, '');
+                } catch (e) {
+                    // Keep default if parsing fails
+                }
+            }
+
+            // Parse token symbol from hex response
+            if (symbolResponse.data.result && symbolResponse.data.result !== '0x') {
+                try {
+                    const symbolHex = symbolResponse.data.result.slice(2);
+                    const symbolBuffer = Buffer.from(symbolHex, 'hex');
+                    const symbolStart = symbolBuffer.readUInt32BE(28);
+                    const symbolData = symbolBuffer.slice(32, 32 + symbolStart);
+                    tokenSymbol = symbolData.toString('utf8').replace(/\0/g, '');
+                } catch (e) {
+                    // Keep default if parsing fails
+                }
+            }
+
+            // Convert balance using token decimals
+            const balanceInTokenUnits = parseFloat(rawBalance) / Math.pow(10, decimals);
 
             return {
                 content: [
                     {
                         type: 'text',
-                        text: JSON.stringify(response.data, null, 2),
+                        text: JSON.stringify({
+                            contractAddress,
+                            address,
+                            tokenInfo: {
+                                name: tokenName,
+                                symbol: tokenSymbol,
+                                decimals: decimals,
+                            },
+                            balance: {
+                                raw: rawBalance,
+                                formatted: balanceInTokenUnits.toFixed(decimals > 6 ? 6 : decimals),
+                                fullPrecision: balanceInTokenUnits.toString(),
+                            },
+                            status: balanceResponse.data.status,
+                            message: balanceResponse.data.message,
+                        }, null, 2),
                     },
                 ],
             };
