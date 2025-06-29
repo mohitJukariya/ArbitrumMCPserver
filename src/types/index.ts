@@ -112,3 +112,133 @@ export interface GetLatestBlockParams { }
 export interface ValidateAddressParams {
     address: string;
 }
+
+export interface GetMultiBalanceParams {
+    addresses: string[];
+}
+
+export interface GetERC20TransfersParams {
+    address: string;
+    contractAddress?: string;
+    startBlock?: string;
+    endBlock?: string;
+    page?: string;
+    offset?: string;
+}
+
+export interface GetERC721TransfersParams {
+    address: string;
+    contractAddress?: string;
+    startBlock?: string;
+    endBlock?: string;
+    page?: string;
+    offset?: string;
+}
+
+export interface GetInternalTransactionsParams {
+    address?: string;
+    txHash?: string;
+    startBlock?: string;
+    endBlock?: string;
+    page?: string;
+    offset?: string;
+}
+
+export interface GetContractSourceParams {
+    address: string;
+}
+
+export interface GetTokenInfoParams {
+    contractAddress: string;
+}
+
+export interface GetGasOracleParams { }
+
+export interface GetTransactionStatusParams {
+    txHash: string;
+}
+
+export interface GetContractCreationParams {
+    contractAddresses: string[];
+}
+
+export interface GetAddressTypeParams {
+    address: string;
+}
+
+export interface ArbitrumERC20Transfer {
+    blockNumber: string;
+    timeStamp: string;
+    hash: string;
+    nonce: string;
+    blockHash: string;
+    from: string;
+    contractAddress: string;
+    to: string;
+    value: string;
+    tokenName: string;
+    tokenSymbol: string;
+    tokenDecimal: string;
+    transactionIndex: string;
+    gas: string;
+    gasPrice: string;
+    gasUsed: string;
+    cumulativeGasUsed: string;
+    input: string;
+    confirmations: string;
+}
+
+export interface ArbitrumERC721Transfer {
+    blockNumber: string;
+    timeStamp: string;
+    hash: string;
+    nonce: string;
+    blockHash: string;
+    from: string;
+    contractAddress: string;
+    to: string;
+    tokenID: string;
+    tokenName: string;
+    tokenSymbol: string;
+    tokenDecimal: string;
+    transactionIndex: string;
+    gas: string;
+    gasPrice: string;
+    gasUsed: string;
+    cumulativeGasUsed: string;
+    input: string;
+    confirmations: string;
+}
+
+export interface ArbitrumInternalTransaction {
+    blockNumber: string;
+    timeStamp: string;
+    hash: string;
+    from: string;
+    to: string;
+    value: string;
+    contractAddress: string;
+    input: string;
+    type: string;
+    gas: string;
+    gasUsed: string;
+    traceId: string;
+    isError: string;
+    errCode: string;
+}
+
+export interface ArbitrumContractSource {
+    SourceCode: string;
+    ABI: string;
+    ContractName: string;
+    CompilerVersion: string;
+    OptimizationUsed: string;
+    Runs: string;
+    ConstructorArguments: string;
+    EVMVersion: string;
+    Library: string;
+    LicenseType: string;
+    Proxy: string;
+    Implementation: string;
+    SwarmSource: string;
+}

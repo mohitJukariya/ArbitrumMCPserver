@@ -164,6 +164,202 @@ export class McpService {
                         required: ['address'],
                     },
                 },
+                {
+                    name: 'getMultiBalance',
+                    description: 'Get ETH balances for multiple addresses at once',
+                    inputSchema: {
+                        type: 'object',
+                        properties: {
+                            addresses: {
+                                type: 'array',
+                                items: { type: 'string' },
+                                description: 'Array of Ethereum addresses to check balances for',
+                            },
+                        },
+                        required: ['addresses'],
+                    },
+                },
+                {
+                    name: 'getERC20Transfers',
+                    description: 'Get ERC-20 token transfers for an address',
+                    inputSchema: {
+                        type: 'object',
+                        properties: {
+                            address: {
+                                type: 'string',
+                                description: 'Address to get token transfers for',
+                            },
+                            contractAddress: {
+                                type: 'string',
+                                description: 'Optional: specific token contract address',
+                            },
+                            startBlock: {
+                                type: 'string',
+                                description: 'Starting block number (default: 0)',
+                            },
+                            endBlock: {
+                                type: 'string',
+                                description: 'Ending block number (default: 99999999)',
+                            },
+                            page: {
+                                type: 'string',
+                                description: 'Page number (default: 1)',
+                            },
+                            offset: {
+                                type: 'string',
+                                description: 'Number of transfers per page (default: 10)',
+                            },
+                        },
+                        required: ['address'],
+                    },
+                },
+                {
+                    name: 'getERC721Transfers',
+                    description: 'Get ERC-721 (NFT) token transfers for an address',
+                    inputSchema: {
+                        type: 'object',
+                        properties: {
+                            address: {
+                                type: 'string',
+                                description: 'Address to get NFT transfers for',
+                            },
+                            contractAddress: {
+                                type: 'string',
+                                description: 'Optional: specific NFT contract address',
+                            },
+                            startBlock: {
+                                type: 'string',
+                                description: 'Starting block number (default: 0)',
+                            },
+                            endBlock: {
+                                type: 'string',
+                                description: 'Ending block number (default: 99999999)',
+                            },
+                            page: {
+                                type: 'string',
+                                description: 'Page number (default: 1)',
+                            },
+                            offset: {
+                                type: 'string',
+                                description: 'Number of transfers per page (default: 10)',
+                            },
+                        },
+                        required: ['address'],
+                    },
+                },
+                {
+                    name: 'getInternalTransactions',
+                    description: 'Get internal transactions by address or transaction hash',
+                    inputSchema: {
+                        type: 'object',
+                        properties: {
+                            address: {
+                                type: 'string',
+                                description: 'Address to get internal transactions for',
+                            },
+                            txHash: {
+                                type: 'string',
+                                description: 'Transaction hash to get internal transactions for',
+                            },
+                            startBlock: {
+                                type: 'string',
+                                description: 'Starting block number (default: 0)',
+                            },
+                            endBlock: {
+                                type: 'string',
+                                description: 'Ending block number (default: 99999999)',
+                            },
+                            page: {
+                                type: 'string',
+                                description: 'Page number (default: 1)',
+                            },
+                            offset: {
+                                type: 'string',
+                                description: 'Number of transactions per page (default: 10)',
+                            },
+                        },
+                        required: [],
+                    },
+                },
+                {
+                    name: 'getContractSource',
+                    description: 'Get verified contract source code and ABI',
+                    inputSchema: {
+                        type: 'object',
+                        properties: {
+                            address: {
+                                type: 'string',
+                                description: 'Contract address to get source code for',
+                            },
+                        },
+                        required: ['address'],
+                    },
+                },
+                {
+                    name: 'getTokenInfo',
+                    description: 'Get detailed information about a token contract',
+                    inputSchema: {
+                        type: 'object',
+                        properties: {
+                            contractAddress: {
+                                type: 'string',
+                                description: 'Token contract address to get info for',
+                            },
+                        },
+                        required: ['contractAddress'],
+                    },
+                },
+                {
+                    name: 'getGasOracle',
+                    description: 'Get gas price recommendations from Gas Oracle',
+                    inputSchema: {
+                        type: 'object',
+                        properties: {},
+                    },
+                },
+                {
+                    name: 'getTransactionStatus',
+                    description: 'Get detailed transaction status and receipt',
+                    inputSchema: {
+                        type: 'object',
+                        properties: {
+                            txHash: {
+                                type: 'string',
+                                description: 'Transaction hash to get status for',
+                            },
+                        },
+                        required: ['txHash'],
+                    },
+                },
+                {
+                    name: 'getContractCreation',
+                    description: 'Get contract creation transaction details',
+                    inputSchema: {
+                        type: 'object',
+                        properties: {
+                            contractAddresses: {
+                                type: 'array',
+                                items: { type: 'string' },
+                                description: 'Array of contract addresses to get creation info for',
+                            },
+                        },
+                        required: ['contractAddresses'],
+                    },
+                },
+                {
+                    name: 'getAddressType',
+                    description: 'Determine if an address is a contract or EOA (externally owned account)',
+                    inputSchema: {
+                        type: 'object',
+                        properties: {
+                            address: {
+                                type: 'string',
+                                description: 'Address to check type for',
+                            },
+                        },
+                        required: ['address'],
+                    },
+                },
             ],
         };
     }
@@ -181,6 +377,16 @@ export class McpService {
             getGasPrice: () => this.arbitrumService.getGasPrice(args),
             getEthSupply: () => this.arbitrumService.getEthSupply(),
             validateAddress: () => this.arbitrumService.validateAddress(args),
+            getMultiBalance: () => this.arbitrumService.getMultiBalance(args),
+            getERC20Transfers: () => this.arbitrumService.getERC20Transfers(args),
+            getERC721Transfers: () => this.arbitrumService.getERC721Transfers(args),
+            getInternalTransactions: () => this.arbitrumService.getInternalTransactions(args),
+            getContractSource: () => this.arbitrumService.getContractSource(args),
+            getTokenInfo: () => this.arbitrumService.getTokenInfo(args),
+            getGasOracle: () => this.arbitrumService.getGasOracle(args),
+            getTransactionStatus: () => this.arbitrumService.getTransactionStatus(args),
+            getContractCreation: () => this.arbitrumService.getContractCreation(args),
+            getAddressType: () => this.arbitrumService.getAddressType(args),
         };
 
         const tool = tools[name];
