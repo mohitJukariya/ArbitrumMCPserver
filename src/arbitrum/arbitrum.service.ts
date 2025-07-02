@@ -247,6 +247,33 @@ export class ArbitrumService {
         }
     }
 
+    // Token metadata service using CoinGecko API
+    private async getTokenMetadataFromCoinGecko(contractAddress: string): Promise<{ name: string, symbol: string, decimals: number } | null> {
+        try {
+            // CoinGecko API to get token info by contract address
+            const response = await axios.get(
+                `https://api.coingecko.com/api/v3/coins/arbitrum-one/contract/${contractAddress.toLowerCase()}`,
+                {
+                    timeout: 5000,
+                    headers: {
+                        'Accept': 'application/json',
+                    }
+                }
+            );
+
+            if (response.data && response.data.name && response.data.symbol) {
+                return {
+                    name: response.data.name,
+                    symbol: response.data.symbol.toUpperCase(),
+                    decimals: response.data.detail_platforms?.['arbitrum-one']?.decimal_place || 18
+                };
+            }
+        } catch (error) {
+            console.warn(`CoinGecko API failed for ${contractAddress}:`, error.message);
+        }
+        return null;
+    }
+
     async getTokenBalance({
         contractAddress,
         address,
@@ -277,35 +304,66 @@ export class ArbitrumService {
             let tokenName = 'Unknown Token';
             let tokenSymbol = 'UNKNOWN';
 
-            // Parse decimals from hex response
-            if (decimalsResponse.data.result && decimalsResponse.data.result !== '0x') {
-                decimals = parseInt(decimalsResponse.data.result, 16);
-            }
+            // First try to get token metadata from CoinGecko
+            const coinGeckoMetadata = await this.getTokenMetadataFromCoinGecko(contractAddress);
+            if (coinGeckoMetadata) {
+                tokenName = coinGeckoMetadata.name;
+                tokenSymbol = coinGeckoMetadata.symbol;
+                decimals = coinGeckoMetadata.decimals;
+                console.log(`CoinGecko metadata found for ${contractAddress}:`, coinGeckoMetadata);
+            } else {
+                console.log(`No CoinGecko metadata found for ${contractAddress}, trying blockchain calls...`);
 
-            // Parse token name from hex response
-            if (nameResponse.data.result && nameResponse.data.result !== '0x') {
-                try {
-                    const nameHex = nameResponse.data.result.slice(2);
-                    const nameBuffer = Buffer.from(nameHex, 'hex');
-                    // Skip the first 64 characters (32 bytes) which contain length info
-                    const nameStart = nameBuffer.readUInt32BE(28); // Length is at offset 28-31
-                    const nameData = nameBuffer.slice(32, 32 + nameStart);
-                    tokenName = nameData.toString('utf8').replace(/\0/g, '');
-                } catch (e) {
-                    // Keep default if parsing fails
+                // Fallback to blockchain calls if CoinGecko fails
+                // Parse decimals from hex response
+                if (decimalsResponse.data.result && decimalsResponse.data.result !== '0x' && decimalsResponse.data.status === '1') {
+                    try {
+                        decimals = parseInt(decimalsResponse.data.result, 16);
+                    } catch (e) {
+                        console.warn('Failed to parse decimals:', e.message);
+                    }
                 }
-            }
 
-            // Parse token symbol from hex response
-            if (symbolResponse.data.result && symbolResponse.data.result !== '0x') {
-                try {
-                    const symbolHex = symbolResponse.data.result.slice(2);
-                    const symbolBuffer = Buffer.from(symbolHex, 'hex');
-                    const symbolStart = symbolBuffer.readUInt32BE(28);
-                    const symbolData = symbolBuffer.slice(32, 32 + symbolStart);
-                    tokenSymbol = symbolData.toString('utf8').replace(/\0/g, '');
-                } catch (e) {
-                    // Keep default if parsing fails
+                // Parse token name from hex response
+                if (nameResponse.data.result && nameResponse.data.result !== '0x' && nameResponse.data.status === '1') {
+                    try {
+                        const nameHex = nameResponse.data.result.slice(2);
+                        if (nameHex.length >= 64) {
+                            const nameBuffer = Buffer.from(nameHex, 'hex');
+                            const lengthHex = nameHex.slice(64, 128);
+                            const length = parseInt(lengthHex, 16);
+                            if (length > 0 && length < 100) {
+                                const nameData = nameBuffer.slice(32, 32 + length);
+                                const decoded = nameData.toString('utf8').replace(/\0/g, '');
+                                if (decoded && decoded.length > 0 && /^[a-zA-Z0-9\s\-_\.]+$/.test(decoded)) {
+                                    tokenName = decoded;
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('Failed to parse token name:', e.message);
+                    }
+                }
+
+                // Parse token symbol from hex response
+                if (symbolResponse.data.result && symbolResponse.data.result !== '0x' && symbolResponse.data.status === '1') {
+                    try {
+                        const symbolHex = symbolResponse.data.result.slice(2);
+                        if (symbolHex.length >= 64) {
+                            const symbolBuffer = Buffer.from(symbolHex, 'hex');
+                            const lengthHex = symbolHex.slice(64, 128);
+                            const length = parseInt(lengthHex, 16);
+                            if (length > 0 && length < 20) {
+                                const symbolData = symbolBuffer.slice(32, 32 + length);
+                                const decoded = symbolData.toString('utf8').replace(/\0/g, '');
+                                if (decoded && decoded.length > 0 && /^[a-zA-Z0-9]+$/.test(decoded)) {
+                                    tokenSymbol = decoded;
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('Failed to parse token symbol:', e.message);
+                    }
                 }
             }
 
