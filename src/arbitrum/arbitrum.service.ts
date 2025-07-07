@@ -60,7 +60,7 @@ export class ArbitrumService {
                             balance: {
                                 wei: balanceWei,
                                 eth: balanceInEth.toFixed(6),
-                                ethFullPrecision: balanceInEth.toString(),
+                                ethFullPrecision: balanceInEth.toFixed(18).replace(/\.?0+$/, ''),
                                 formatted: `${balanceInEth.toFixed(18).replace(/\.?0+$/, '')} ETH`,
                             },
                             network: 'Arbitrum',
@@ -250,6 +250,12 @@ export class ArbitrumService {
     // Token metadata service using CoinGecko API
     private async getTokenMetadataFromCoinGecko(contractAddress: string): Promise<{ name: string, symbol: string, decimals: number } | null> {
         try {
+            // Check if contractAddress is defined
+            if (!contractAddress || typeof contractAddress !== 'string') {
+                console.warn('CoinGecko API: contractAddress is undefined or invalid');
+                return null;
+            }
+
             // CoinGecko API to get token info by contract address
             const response = await axios.get(
                 `https://api.coingecko.com/api/v3/coins/arbitrum-one/contract/${contractAddress.toLowerCase()}`,
@@ -678,9 +684,11 @@ export class ArbitrumService {
                 url += `&txhash=${txHash}`;
             }
 
-            const response = await axios.get<{ status: string; message: string; result: ArbitrumInternalTransaction[] }>(url);
+            const response = await axios.get<{ status: string; message: string; result: any[] }>(url, {
+                timeout: 15000, // 15 second timeout
+            });
 
-            const formattedTransactions = response.data.result.map((tx: ArbitrumInternalTransaction) => {
+            const formattedTransactions = response.data.result.map((tx: any) => {
                 const valueInEth = parseFloat(tx.value) / Math.pow(10, 18);
 
                 return {
@@ -690,7 +698,7 @@ export class ArbitrumService {
                     formattedValue: {
                         wei: tx.value,
                         eth: valueInEth.toFixed(6),
-                        ethFullPrecision: valueInEth.toString(),
+                        ethFullPrecision: valueInEth.toFixed(18).replace(/\.?0+$/, ''),
                         formatted: `${valueInEth.toFixed(18).replace(/\.?0+$/, '')} ETH`,
                     },
                     success: tx.isError === '0',
